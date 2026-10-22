@@ -30,11 +30,30 @@ function palabraAlAzar(anterior = '') {
   return palabra
 }
 
-// Decide el color de una letra ya comprobada
-function estadoDe(letra, columna, solucion) {
-  if (solucion[columna] === letra) return 'correcta'
-  if (solucion.includes(letra)) return 'presente'
-  return 'ausente'
+// Decide los colores de una fila completa, en dos pasadas
+function estadosDeFila(fila, solucion) {
+  const estados = Array(fila.length).fill('ausente')
+  // Cuántas veces queda disponible cada letra de la solución
+  const quedan = {}
+
+  // 1ª pasada: las letras que están en su sitio
+  fila.forEach((letra, c) => {
+    if (letra === solucion[c]) {
+      estados[c] = 'correcta'
+    } else {
+      quedan[solucion[c]] = (quedan[solucion[c]] ?? 0) + 1
+    }
+  })
+
+  // 2ª pasada: las demás, mientras queden letras disponibles
+  fila.forEach((letra, c) => {
+    if (estados[c] !== 'correcta' && quedan[letra] > 0) {
+      estados[c] = 'presente'
+      quedan[letra]--
+    }
+  })
+
+  return estados
 }
 
 function App() {
@@ -94,22 +113,24 @@ function App() {
   return (
     <form className="juego" onSubmit={comprobar}>
       <h1>Wordle</h1>
-      <div className="tablero">
-        {intentos.map((fila, f) => (
-          <div className="fila" key={f}>
-            {fila.map((letra, c) => (
-              <Casilla
-                key={c}
-                letra={letra}
-                estado={f < filaActual ? estadoDe(letra, c, solucion) : ''}
-                activa={f === filaActual && !terminada}
-                onCambio={(evento) => cambiarLetra(f, c, evento)}
-              />
-            ))}
-          </div>
-        ))}
+            <div className="tablero">
+        {intentos.map((fila, f) => {
+          const estados = f < filaActual ? estadosDeFila(fila, solucion) : []
+          return (
+            <div className="fila" key={f}>
+              {fila.map((letra, c) => (
+                <Casilla
+                  key={c}
+                  letra={letra}
+                  estado={estados[c] ?? ''}
+                  activa={f === filaActual && !terminada}
+                  onCambio={(evento) => cambiarLetra(f, c, evento)}
+                />
+              ))}
+            </div>
+          )
+        })}
       </div>
-
       {aviso && (
         <p className="aviso" role="alert">
           {aviso}
