@@ -15,6 +15,8 @@ function tableroVacio() {
 
 function App() {
   const [intentos, setIntentos] = useState(tableroVacio())
+  const [filaActual, setFilaActual] = useState(0)
+  const terminada = filaActual === FILAS
 
   function cambiarLetra(f, c, evento) {
     const letra = evento.target.value.toUpperCase()
@@ -28,8 +30,20 @@ function App() {
     setIntentos(copia)
   }
 
+  function comprobar(evento) {
+    // Evita que el navegador recargue la página al enviar el formulario
+    evento.preventDefault()
+
+    if (terminada) return
+
+    // No se puede comprobar una fila incompleta
+    if (intentos[filaActual].includes('')) return
+
+    setFilaActual(filaActual + 1)
+  }
+
   return (
-    <div className="juego">
+    <form className="juego" onSubmit={comprobar}>
       <h1>Wordle</h1>
       <div className="tablero">
         {intentos.map((fila, f) => (
@@ -38,13 +52,17 @@ function App() {
               <Casilla
                 key={c}
                 letra={letra}
+                activa={f === filaActual}
                 onCambio={(evento) => cambiarLetra(f, c, evento)}
               />
             ))}
           </div>
         ))}
       </div>
-    </div>
+      <button className="boton" type="submit">
+        Comprobar
+      </button>
+    </form>
   )
 }
 
