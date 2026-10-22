@@ -1,66 +1,19 @@
 import { useEffect, useState } from 'react'
 import Casilla from './components/Casilla.jsx'
-
-const FILAS = 6
-const COLUMNAS = 5
-
-// Palabras de cinco letras, en mayúsculas y sin tildes
-const PALABRAS = [
-  'PERRO', 'GATOS', 'PLATO', 'RELOJ', 'MONTE',
-  'LIBRO', 'CAMPO', 'NUBES', 'FRESA', 'PIANO',
-  'TIGRE', 'VERDE', 'PLAYA', 'CARTA', 'MUNDO',
-]
-
-// Crea un tablero vacío: 6 filas de 5 letras en blanco
-function tableroVacio() {
-  const tablero = []
-  for (let f = 0; f < FILAS; f++) {
-    tablero.push(Array(COLUMNAS).fill(''))
-  }
-  return tablero
-}
-
-// Elige una palabra al azar, distinta de la anterior
-function palabraAlAzar(anterior = '') {
-  let palabra
-  do {
-    const i = Math.floor(Math.random() * PALABRAS.length)
-    palabra = PALABRAS[i]
-  } while (palabra === anterior)
-  return palabra
-}
-
-// Decide los colores de una fila completa, en dos pasadas
-function estadosDeFila(fila, solucion) {
-  const estados = Array(fila.length).fill('ausente')
-  // Cuántas veces queda disponible cada letra de la solución
-  const quedan = {}
-
-  // 1ª pasada: las letras que están en su sitio
-  fila.forEach((letra, c) => {
-    if (letra === solucion[c]) {
-      estados[c] = 'correcta'
-    } else {
-      quedan[solucion[c]] = (quedan[solucion[c]] ?? 0) + 1
-    }
-  })
-
-  // 2ª pasada: las demás, mientras queden letras disponibles
-  fila.forEach((letra, c) => {
-    if (estados[c] !== 'correcta' && quedan[letra] > 0) {
-      estados[c] = 'presente'
-      quedan[letra]--
-    }
-  })
-
-  return estados
-}
+import Teclado from './components/Teclado.jsx'
+import {
+  FILAS,
+  tableroVacio,
+  palabraAlAzar,
+  estadosDeFila,
+  estadosDelTeclado,
+} from './juego.js'
 
 function App() {
   const [intentos, setIntentos] = useState(tableroVacio())
   const [filaActual, setFilaActual] = useState(0)
   const [solucion, setSolucion] = useState(() => palabraAlAzar())
-  const [aviso, setAviso] = useState('') // ⬅ M3
+  const [aviso, setAviso] = useState('')
 
   // El último intento comprobado, como texto: 'PERRO'
   const ultimo = filaActual > 0 ? intentos[filaActual - 1].join('') : ''
@@ -72,20 +25,38 @@ function App() {
     document.querySelector('.casilla:enabled')?.focus()
   }, [filaActual])
 
+  // Copia el tablero, cambia una letra y guarda la copia
+  function guardarLetra(f, c, letra) {
+    const copia = intentos.map((fila) => [...fila])
+    copia[f][c] = letra
+    setIntentos(copia)
+    setAviso('')
+  }
+
   function cambiarLetra(f, c, evento) {
     const letra = evento.target.value.toUpperCase()
 
     // Solo aceptamos una letra, o nada si se ha borrado
     if (!/^[A-ZÑ]?$/.test(letra)) return
 
-    // Copiamos el tablero, cambiamos la copia y la guardamos
-    const copia = intentos.map((fila) => [...fila])
-    copia[f][c] = letra
-    setIntentos(copia)
-    setAviso('') 
+    guardarLetra(f, c, letra)
 
     // Después de escribir una letra, pasamos a la casilla siguiente
     if (letra !== '') evento.target.nextElementSibling?.focus()
+  }
+
+  // Teclado en pantalla: escribe en la primera casilla vacía
+  function pulsarTecla(letra) {
+    if (terminada) return
+    const c = intentos[filaActual].indexOf('')
+    if (c !== -1) guardarLetra(filaActual, c, letra)
+  }
+
+  // Teclado en pantalla: borra la última letra escrita
+  function borrarLetra() {
+    if (terminada) return
+    const c = intentos[filaActual].findLastIndex((letra) => letra !== '')
+    if (c !== -1) guardarLetra(filaActual, c, '')
   }
 
   function comprobar(evento) {
@@ -107,13 +78,14 @@ function App() {
     setIntentos(tableroVacio())
     setFilaActual(0)
     setSolucion(palabraAlAzar(solucion))
-    setAviso('') 
+    setAviso('')
   }
 
   return (
     <form className="juego" onSubmit={comprobar}>
       <h1>Wordle</h1>
-            <div className="tablero">
+
+      <div className="tablero">
         {intentos.map((fila, f) => {
           const estados = f < filaActual ? estadosDeFila(fila, solucion) : []
           return (
@@ -133,6 +105,7 @@ function App() {
           )
         })}
       </div>
+
       {aviso && (
         <p className="aviso" role="alert">
           {aviso}
@@ -155,6 +128,12 @@ function App() {
           Comprobar
         </button>
       )}
+
+      <Teclado
+        estados={estadosDelTeclado(intentos, filaActual, solucion)}
+        onLetra={pulsarTecla}
+        onBorrar={borrarLetra}
+      />
     </form>
   )
 }
