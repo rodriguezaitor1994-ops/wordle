@@ -1,4 +1,11 @@
-function Casilla({ letra, estado = '', activa, onCambio }) {
+// Texto que lee el lector de pantalla para cada estado
+const NOMBRES = {
+  correcta: 'letra correcta',
+  presente: 'letra en otra posición',
+  ausente: 'letra que no está',
+}
+
+function Casilla({ letra, estado = '', activa, fila, columna, onCambio }) {
   // Retroceso en una casilla vacía: el cursor va a la anterior
   function teclaPulsada(evento) {
     if (evento.key === 'Backspace' && letra === '') {
@@ -7,12 +14,16 @@ function Casilla({ letra, estado = '', activa, onCambio }) {
     }
   }
 
+  let etiqueta = `Fila ${fila + 1}, columna ${columna + 1}`
+  if (estado) etiqueta += `, ${NOMBRES[estado]}`
+
   return (
     <input
       className={`casilla ${estado}`}
       value={letra}
       maxLength={1}
       disabled={!activa}
+      aria-label={etiqueta}
       onChange={onCambio}
       onKeyDown={teclaPulsada}
       onFocus={(evento) => evento.target.select()}

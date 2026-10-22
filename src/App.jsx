@@ -124,6 +124,8 @@ function App() {
                   letra={letra}
                   estado={estados[c] ?? ''}
                   activa={f === filaActual && !terminada}
+                  fila={f}
+                  columna={c}
                   onCambio={(evento) => cambiarLetra(f, c, evento)}
                 />
               ))}
