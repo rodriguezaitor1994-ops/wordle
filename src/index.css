@@ -86,4 +86,9 @@ body {
   font-size: 1.2rem;
   font-weight: bold;
 }
+
+.aviso {
+  color: #b3261e;
+  font-weight: bold;
+}
 }

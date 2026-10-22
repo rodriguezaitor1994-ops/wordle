@@ -4,7 +4,7 @@ import Casilla from './components/Casilla.jsx'
 const FILAS = 6
 const COLUMNAS = 5
 
-
+// Palabras de cinco letras, en mayúsculas y sin tildes
 const PALABRAS = [
   'PERRO', 'GATOS', 'PLATO', 'RELOJ', 'MONTE',
   'LIBRO', 'CAMPO', 'NUBES', 'FRESA', 'PIANO',
@@ -20,7 +20,7 @@ function tableroVacio() {
   return tablero
 }
 
-
+// Elige una palabra al azar, distinta de la anterior
 function palabraAlAzar(anterior = '') {
   let palabra
   do {
@@ -40,11 +40,12 @@ function estadoDe(letra, columna, solucion) {
 function App() {
   const [intentos, setIntentos] = useState(tableroVacio())
   const [filaActual, setFilaActual] = useState(0)
-  const [solucion, setSolucion] = useState(() => palabraAlAzar()) 
+  const [solucion, setSolucion] = useState(() => palabraAlAzar())
+  const [aviso, setAviso] = useState('') // ⬅ M3
 
   // El último intento comprobado, como texto: 'PERRO'
   const ultimo = filaActual > 0 ? intentos[filaActual - 1].join('') : ''
-  const ganada = ultimo === solucion 
+  const ganada = ultimo === solucion
   const terminada = ganada || filaActual === FILAS
 
   useEffect(() => {
@@ -62,6 +63,7 @@ function App() {
     const copia = intentos.map((fila) => [...fila])
     copia[f][c] = letra
     setIntentos(copia)
+    setAviso('') 
 
     // Después de escribir una letra, pasamos a la casilla siguiente
     if (letra !== '') evento.target.nextElementSibling?.focus()
@@ -74,16 +76,19 @@ function App() {
     if (terminada) return
 
     // No se puede comprobar una fila incompleta
-    if (intentos[filaActual].includes('')) return
+    if (intentos[filaActual].includes('')) {
+      setAviso('Faltan letras')
+      return
+    }
 
     setFilaActual(filaActual + 1)
   }
 
-  
   function nuevaPartida() {
     setIntentos(tableroVacio())
     setFilaActual(0)
-    setSolucion(palabraAlAzar(solucion)) 
+    setSolucion(palabraAlAzar(solucion))
+    setAviso('') 
   }
 
   return (
@@ -105,6 +110,12 @@ function App() {
         ))}
       </div>
 
+      {aviso && (
+        <p className="aviso" role="alert">
+          {aviso}
+        </p>
+      )}
+
       {terminada ? (
         <>
           <p className="mensaje" role="status">
@@ -112,7 +123,6 @@ function App() {
               ? '¡Enhorabuena, has acertado!'
               : `La palabra era ${solucion}`}
           </p>
-          {/* ⬅ M1 */}
           <button className="boton" type="button" onClick={nuevaPartida}>
             Nueva partida
           </button>
